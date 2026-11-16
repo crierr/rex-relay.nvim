@@ -28,8 +28,8 @@ SETUP                                                    *rex-relay-setup*
 COMMANDS                                                 *:Relay*
 
 :[range]Relay ref       Type `path:12` (or `path:12-20`) at the agent's
-                        cursor. Never submits.        (<prefix>i)
-:[range]Relay ref-focus Same, then focus the agent's pane. (<prefix>I)
+                        cursor. Never submits.        (<prefix>I)
+:[range]Relay ref-focus Same, then focus the agent's pane. (<prefix>i)
 :[range]Relay comment   Comment the line or range.    (<prefix>c)
 :Relay edit             Edit the comment under the cursor. (<prefix>e)
 :Relay delete           Delete the comment under the cursor. (<prefix>d)
