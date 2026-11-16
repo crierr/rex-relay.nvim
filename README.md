@@ -57,7 +57,7 @@ opts = {
 In `:Relay list`, `e` edits and `d` deletes the entry under the cursor.
 Edit and delete ask which one when several comments cover a line. Comments are kept in
 memory only and follow your edits. Paths are relative to
-the agent's working directory. In Neo-tree, `ref` sends the paths of the
+the agent's working directory. In Neo-tree and the Snacks explorer, `ref` sends the paths of the
 selected files or folders (no line numbers). `comment`, `edit` and `delete`
 don't work there. See `:help rex-relay`.
 

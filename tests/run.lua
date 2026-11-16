@@ -104,4 +104,20 @@ vim.ui.input = function() error("comment prompted in Neo-tree") end
 r.comment(1, 1)
 r.edit()
 r.delete()
+
+-- Snacks explorer: rows map to list items through the picker's scroll offset
+local items = { { file = "/p/x.lua" }, { file = "/p/sub" }, { text = "no file" } }
+_G.Snacks = { picker = {
+  get = function() return { { list = {
+    win = { win = vim.api.nvim_get_current_win() },
+    top = 2, visible = { items[2], items[3] }, -- scrolled down one
+    row2idx = function(self, row) return row + self.top - 1 end,
+  } } } end,
+  util = { path = function(item) return item.file end },
+} }
+vim.bo.filetype = "snacks_picker_list"
+sent = nil
+r.ref(1, 2)
+assert(sent == "sub ", vim.inspect(sent))
+r.comment(1, 1)
 print("ok")

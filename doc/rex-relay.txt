@@ -44,7 +44,7 @@ COMMANDS                                                 *:Relay*
 
 Comments are in memory only and follow your edits.
 
-In a Neo-tree window, `ref` and `ref-focus` type the paths of the file or
+In a Neo-tree or Snacks explorer window, `ref` and `ref-focus` type the paths of the file or
 folder nodes under the cursor or selection, without line numbers. `comment`,
 `edit` and `delete` are not available there.
 

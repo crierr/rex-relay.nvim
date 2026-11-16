@@ -32,30 +32,44 @@ local function refresh()
   if ours() then vim.fn.setqflist({}, "r", { items = qf_items() }) end
 end
 
--- Neo-tree rows are files and folders, not lines of a file.
-local function in_tree() return vim.bo.filetype == "neo-tree" end
+-- File-tree windows (Neo-tree, Snacks explorer/picker lists): rows are files
+-- and folders, not lines. Each returns the paths on rows s..e of the current window.
+local trees = {
+  ["neo-tree"] = function(s, e)
+    local state = require("neo-tree.sources.manager").get_state_for_window()
+    local paths = {}
+    for l = s, e do
+      local node = state and state.tree and state.tree:get_node(l)
+      if node and node.path then table.insert(paths, node.path) end
+    end
+    return paths
+  end,
+  snacks_picker_list = function(s, e)
+    local win = vim.api.nvim_get_current_win()
+    local picker = vim.tbl_filter(function(p) return p.list.win.win == win end, Snacks.picker.get())[1]
+    local paths = {}
+    for l = s, e do
+      -- visible = what's on screen; list.items can be empty while the finder reruns
+      local item = picker and picker.list.visible[picker.list:row2idx(l) - picker.list.top + 1]
+      local path = item and Snacks.picker.util.path(item)
+      if path then table.insert(paths, path) end
+    end
+    return paths
+  end,
+}
+
+local function in_tree() return trees[vim.bo.filetype] ~= nil end
 
 local function no_lines()
-  if in_tree() then vim.notify("rex-relay: not available in Neo-tree", vim.log.levels.WARN) end
+  if in_tree() then vim.notify("rex-relay: not available in a file tree", vim.log.levels.WARN) end
   return in_tree()
 end
 
--- Paths of the Neo-tree nodes on rows s..e (message rows have no path).
-local function tree_paths(s, e)
-  local state = require("neo-tree.sources.manager").get_state_for_window()
-  local paths = {}
-  for l = s, e do
-    local node = state and state.tree and state.tree:get_node(l)
-    if node and node.path then table.insert(paths, node.path) end
-  end
-  return paths
-end
-
 -- Drop `path:line ` at the agent's cursor; never submits. In Neo-tree, drop the
--- paths of the selected nodes instead. With focus, also move Rex's focus to the
+-- paths of the selected nodes instead (also the Snacks explorer). With focus, also move Rex's focus to the
 -- agent so you can keep typing there.
 function M.ref(s, e, focus)
-  local paths = in_tree() and tree_paths(s, e) or { vim.api.nvim_buf_get_name(0) }
+  local paths = in_tree() and trees[vim.bo.filetype](s, e) or { vim.api.nvim_buf_get_name(0) }
   if #paths == 0 or paths[1] == "" then
     return vim.notify("rex-relay: " .. (in_tree() and "no file here" or "buffer has no file"), vim.log.levels.WARN)
   end
