@@ -32,19 +32,44 @@ local function refresh()
   if ours() then vim.fn.setqflist({}, "r", { items = qf_items() }) end
 end
 
--- Drop `path:line ` at the agent's cursor; never submits. With focus, also
--- move Rex's focus to the agent so you can keep typing there.
+-- Neo-tree rows are files and folders, not lines of a file.
+local function in_tree() return vim.bo.filetype == "neo-tree" end
+
+local function no_lines()
+  if in_tree() then vim.notify("rex-relay: not available in Neo-tree", vim.log.levels.WARN) end
+  return in_tree()
+end
+
+-- Paths of the Neo-tree nodes on rows s..e (message rows have no path).
+local function tree_paths(s, e)
+  local state = require("neo-tree.sources.manager").get_state_for_window()
+  local paths = {}
+  for l = s, e do
+    local node = state and state.tree and state.tree:get_node(l)
+    if node and node.path then table.insert(paths, node.path) end
+  end
+  return paths
+end
+
+-- Drop `path:line ` at the agent's cursor; never submits. In Neo-tree, drop the
+-- paths of the selected nodes instead. With focus, also move Rex's focus to the
+-- agent so you can keep typing there.
 function M.ref(s, e, focus)
-  local file = vim.api.nvim_buf_get_name(0)
-  if file == "" then return vim.notify("rex-relay: buffer has no file", vim.log.levels.WARN) end
+  local paths = in_tree() and tree_paths(s, e) or { vim.api.nvim_buf_get_name(0) }
+  if #paths == 0 or paths[1] == "" then
+    return vim.notify("rex-relay: " .. (in_tree() and "no file here" or "buffer has no file"), vim.log.levels.WARN)
+  end
+  if in_tree() then s, e = nil, nil end
   rex.with_agent(function(a)
-    if not write(a, comments.location(file, s, e, a.cwd) .. " ", false) or not focus then return end
+    local refs = vim.tbl_map(function(p) return comments.location(p, s, e, a.cwd) end, paths)
+    if not write(a, table.concat(refs, " ") .. " ", false) or not focus then return end
     local ok, err = rex.focus(a)
     if not ok then vim.notify("rex-relay: " .. err, vim.log.levels.ERROR) end
   end)
 end
 
 function M.comment(s, e)
+  if no_lines() then return end
   local bufnr = vim.api.nvim_get_current_buf()
   vim.ui.input({ prompt = "Comment: " }, function(text)
     if text and text ~= "" then
@@ -81,6 +106,7 @@ end
 -- Run fn on the comment under the cursor (or under the quickfix entry), asking
 -- when several overlap.
 local function on_comment(verb, fn)
+  if no_lines() then return end
   local bufnr, line = vim.api.nvim_get_current_buf(), vim.fn.line(".")
   if vim.bo.buftype == "quickfix" then
     local item = vim.fn.getqflist()[line]

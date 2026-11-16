@@ -81,4 +81,27 @@ vim.cmd("cclose")
 c.add(buf, 1, 1, "x")
 c.clear()
 assert(#c.list() == 0)
+
+-- Neo-tree: ref sends node paths (no lines); line-based commands refuse
+assert(c.location("/p/dir", nil, nil, "/p") == "dir")
+local rows = { { path = "/p/dir" }, { name = "(empty)" }, { path = "/p/a.lua" } }
+package.loaded["neo-tree.sources.manager"] = {
+  get_state_for_window = function() return { tree = { get_node = function(_, l) return rows[l] end } } end,
+}
+local sent
+local rex = require("rex-relay.rex")
+rex.with_agent = function(fn) fn({ cwd = "/p" }) end
+rex.write = function(_, text) sent = text return true end
+local tree = vim.api.nvim_create_buf(false, true)
+vim.api.nvim_set_current_buf(tree)
+vim.bo.filetype = "neo-tree"
+r.ref(1, 3)
+assert(sent == "dir a.lua ", vim.inspect(sent))
+sent = nil
+r.ref(2, 2)
+assert(sent == nil, "sent for a row without a path")
+vim.ui.input = function() error("comment prompted in Neo-tree") end
+r.comment(1, 1)
+r.edit()
+r.delete()
 print("ok")

@@ -3,10 +3,12 @@ local M = {}
 M.ns = vim.api.nvim_create_namespace("rex-relay")
 local notes = {} -- bufnr -> { [extmark_id] = comment text }
 
--- path relative to the agent's cwd when inside it; `path:12` or `path:12-20`.
+-- path relative to the agent's cwd when inside it; `path:12`, `path:12-20`, or
+-- just `path` without lines.
 function M.location(file, s, e, cwd)
   local prefix = (cwd or ""):gsub("/$", "") .. "/"
   if cwd and cwd ~= "" and file:sub(1, #prefix) == prefix then file = file:sub(#prefix + 1) end
+  if not s then return file end
   return s == e and string.format("%s:%d", file, s) or string.format("%s:%d-%d", file, s, e)
 end
 
