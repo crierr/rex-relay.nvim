@@ -9,7 +9,7 @@ local function rex(args, input)
 end
 
 local function call(block, method, args)
-  local argv = { "block", "call", "-s", vim.env.REX_SESSION, "-b", block, method }
+  local argv = { "block", "call", "-s", vim.env.REX_BLOCK, "-b", block, method }
   if args then table.insert(argv, "-") end
   return rex(argv, args and vim.json.encode(args) or nil)
 end
@@ -17,8 +17,8 @@ end
 -- Agents in this Rex session, same tab first. Rex itself reports the running
 -- agent app via program_status, so no process-name guessing is needed.
 function M.agents()
-  if not vim.env.REX_SESSION then return nil, "not inside a Rex terminal (REX_SESSION unset)" end
-  local ls, err = rex({ "block", "ls", "-s", vim.env.REX_SESSION, "--json" })
+  if (vim.env.REX_BLOCK or "") == "" then return nil, "not inside a Rex terminal (REX_BLOCK unset)" end
+  local ls, err = rex({ "block", "ls", "-s", vim.env.REX_BLOCK, "--json" })
   if not ls then return nil, err end
   local my_win
   for _, b in ipairs(ls.blocks) do
@@ -36,7 +36,7 @@ function M.agents()
           app = rec.effective_app or rec.app,
           state = rec.state or "?",
           cwd = (p.foreground or {}).cwd or "",
-          same_tab = b.window_id == my_win,
+          same_tab = my_win ~= nil and b.window_id == my_win,
         })
       end
     end
@@ -55,14 +55,17 @@ function M.write(agent, text, submit)
   local _, err = call(agent.block, "write", { data = text })
   if err then return false, err end
   if submit then
-    vim.defer_fn(function() call(agent.block, "write", { data = "\r" }) end, 300)
+    vim.defer_fn(function()
+      local _, e = call(agent.block, "write", { data = "\r" })
+      if e then vim.notify("rex-relay: submit failed: " .. e, vim.log.levels.ERROR) end
+    end, 300)
   end
   return true
 end
 
 -- Move Rex's focus to the agent's pane.
 function M.focus(agent)
-  local r = vim.system({ "rex", "block", "focus", "-s", vim.env.REX_SESSION, agent.block }, { text = true }):wait()
+  local r = vim.system({ "rex", "block", "focus", "-s", vim.env.REX_BLOCK, agent.block }, { text = true }):wait()
   if r.code ~= 0 then return false, vim.trim(r.stderr ~= "" and r.stderr or ("exit " .. r.code)) end
   return true
 end

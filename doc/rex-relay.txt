@@ -7,7 +7,7 @@ INTRODUCTION                                                       *rex-relay*
 
 Sends `path:line` references and review comments from Neovim to CLI agents
 (Claude Code, Pi, OpenCode, ...) running in other panes of the same Rex
-session. Nvim must run inside a Rex terminal ($REX_SESSION and $REX_BLOCK
+session. Nvim must run inside a Rex terminal ($REX_BLOCK
 set) with `rex` on $PATH. Check with |:checkhealth| rex-relay.
 
 The target is the only agent in this tab, else the only agent in the

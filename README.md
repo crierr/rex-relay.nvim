@@ -16,7 +16,7 @@ agents (Claude Code, Pi, OpenCode, …) running in other panes of the same
 ## Requirements
 
 - Neovim ≥ 0.10
-- Nvim running inside a Rex terminal (`REX_SESSION` / `REX_BLOCK` set), with
+- Nvim running inside a Rex terminal (`REX_BLOCK` set), with
   `rex` on `PATH`
 
 Run `:checkhealth rex-relay` to check your setup and see the agents it finds.
